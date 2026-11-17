@@ -69,6 +69,7 @@ export function createApp({ env, query, apiLimiter, limiters, controllers, authM
     createOrdersRoutes({
       ordersController: controllers.orders,
       authenticate: authMiddleware.authenticate,
+      orderLimiter: limiters.order,
     }),
   );
 

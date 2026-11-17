@@ -29,16 +29,20 @@ function safeEmit(room, event, payload) {
 }
 
 export const publisher = {
-  /** Có đơn mới -> báo cho nhân viên & chính bàn đó */
+  /** Có đơn mới -> báo cho nhân viên & chính bàn đó (TASK-402: phát sự kiện 'new_order') */
   orderCreated(order) {
     safeEmit(rooms.store(order.storeId), 'order:new', order);
+    safeEmit(rooms.store(order.storeId), 'new_order', order);
     safeEmit(rooms.table(order.tableId), 'order:updated', order);
+    safeEmit(rooms.table(order.tableId), 'new_order', order);
   },
 
-  /** Đơn đổi trạng thái -> báo cho nhân viên & bàn */
+  /** Đơn đổi trạng thái -> báo cho nhân viên & bàn (TASK-403: phát sự kiện đồng bộ) */
   orderUpdated(order) {
     safeEmit(rooms.store(order.storeId), 'order:updated', order);
+    safeEmit(rooms.store(order.storeId), 'order_status_updated', order);
     safeEmit(rooms.table(order.tableId), 'order:updated', order);
+    safeEmit(rooms.table(order.tableId), 'order_status_updated', order);
   },
 
   /** Thực đơn thay đổi (hết món...) -> các bàn đang mở app tự cập nhật */
