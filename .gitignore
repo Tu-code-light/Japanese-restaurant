@@ -3,4 +3,6 @@ dist/
 .env
 .DS_Store
 *.log
+.vscode/*-debug
+
 

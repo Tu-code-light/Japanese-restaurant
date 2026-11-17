@@ -6,15 +6,14 @@
       "request": "launch",
       "name": "Mở Web App (F5)",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}"
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug"
     },
     {
       "type": "msedge",
       "request": "launch",
       "name": "Mở Web App với Edge (F5)",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}"
+      "userDataDir": "${workspaceFolder}/.vscode/edge-debug"
     }
   ]
 }
-
