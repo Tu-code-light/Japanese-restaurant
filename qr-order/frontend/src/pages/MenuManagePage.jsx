@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/http';
 import { formatVND } from '../lib/format';
 import { useTranslation } from '../lib/i18n';
+import { translateCategory, translateItemName } from '../lib/menuTranslations';
 
 /** Nhân viên bật/tắt "tạm hết món". Khách đang mở app sẽ tự cập nhật nhờ socket (menu:changed). */
 export default function MenuManagePage() {
@@ -41,11 +42,11 @@ export default function MenuManagePage() {
       {error && <p className="error">{error}</p>}
       {menu.map((cat) => (
         <section key={cat.id} className="section">
-          <h2>{cat.name}</h2>
+          <h2>{translateCategory(cat.name, language)}</h2>
           {cat.items.map((item) => (
             <div className="menu-card" key={item.id}>
               <div className="menu-card__info">
-                <h3 style={{ opacity: item.isAvailable ? 1 : 0.5 }}>{item.name}</h3>
+                <h3 style={{ opacity: item.isAvailable ? 1 : 0.5 }}>{translateItemName(item.name, language)}</h3>
                 <strong>{formatVND(item.price, language)}</strong>
               </div>
               <button className={`btn ${item.isAvailable ? '' : 'btn-danger'}`} disabled={pendingId === item.id} onClick={() => toggle(item)}>

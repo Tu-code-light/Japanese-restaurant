@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { formatTime, formatVND, getStaffActions } from '../lib/format';
 import { StatusBadge } from './StatusBadge';
 import { useTranslation } from '../lib/i18n';
+import { translateItemName } from '../lib/menuTranslations';
 
 /**
  * Thẻ đơn hàng hiển thị cho cả nhân viên (có nút thao tác) lẫn khách (chỉ xem).
@@ -24,7 +25,7 @@ export const OrderCard = memo(function OrderCard({ order, onChangeStatus, busy }
       <ul className="order-card__items">
         {order.items.map((it) => (
           <li key={it.id}>
-            <span>{it.quantity}× {it.name}</span>
+            <span>{it.quantity}× {translateItemName(it.name, language)}</span>
             <span className="muted">{formatVND(it.unitPrice * it.quantity, language)}</span>
           </li>
         ))}

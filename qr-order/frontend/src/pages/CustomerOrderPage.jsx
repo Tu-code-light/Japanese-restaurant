@@ -8,6 +8,7 @@ import { OrderCard } from '../components/OrderCard';
 import { useCartStore, useCartCount, useCartTotal } from '../stores/cartStore';
 import { useCustomerOrders } from '../stores/ordersStore';
 import { useTranslation } from '../lib/i18n';
+import { translateCategory, translateItemName } from '../lib/menuTranslations';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
 /** Một đơn của bàn: subscribe theo id để chỉ render lại khi chính đơn đó đổi */
@@ -67,7 +68,7 @@ function CartSheet({ tableToken, onClose, onUnavailable }) {
         <ul className="sheet__list">
           {list.map((i) => (
             <li key={i.menuItemId}>
-              <span>{i.name}</span>
+              <span>{translateItemName(i.name, language)}</span>
               <span className="qty">
                 <button className="btn-round" onClick={() => useCartStore.getState().remove(i.menuItemId)}>−</button>
                 <span className="qty__n">{i.quantity}</span>
@@ -180,7 +181,7 @@ export default function CustomerOrderPage() {
 
       {data.menu.map((cat) => (
         <section className="section" key={cat.id}>
-          <h2>{cat.name}</h2>
+          <h2>{translateCategory(cat.name, language)}</h2>
           {cat.items.map((item) => <MenuItemCard key={item.id} item={item} />)}
         </section>
       ))}
