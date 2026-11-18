@@ -33,6 +33,11 @@ export const publisher = {
   orderCreated(order) {
     safeEmit(rooms.store(order.storeId), 'order:new', order);
     safeEmit(rooms.store(order.storeId), 'new_order', order);
+    safeEmit(rooms.store(order.storeId), 'notification', {
+      type: 'order:new',
+      orderId: order.id,
+      tableId: order.tableId,
+    });
     safeEmit(rooms.table(order.tableId), 'order:updated', order);
     safeEmit(rooms.table(order.tableId), 'new_order', order);
   },

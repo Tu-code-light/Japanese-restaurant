@@ -3,7 +3,7 @@
 Khách quét QR trên bàn bằng điện thoại → xem menu món Nhật → gửi order. Nhân viên thấy đơn **realtime**, xử lý theo luồng:
 `Chờ xác nhận → Đã nhận → Đang làm → Đã phục vụ → Thanh toán`.
 
-**Stack:** Node.js 20+ · Express · Socket.io · PostgreSQL (`pg` Pool) · Zod · JWT — React 18 · Vite · Zustand.
+**Stack:** Node.js 20+ · Express · Socket.io · PostgreSQL (`pg` Pool) · Zod · JWT · Multer — React 18 · Vite · Zustand.
 
 ---
 
@@ -23,7 +23,7 @@ cd qr-order/backend
 # Copy file cấu hình (nếu chưa có)
 cp .env.example .env      # Trên Windows PowerShell: Copy-Item .env.example .env
 npm install
-npm run db:init           # Tạo bảng + nạp dữ liệu mẫu (10 bàn, 32 món Nhật, 2 tài khoản)
+npm run db:init           # Cập nhật schema/migrations; chỉ seed nếu DB chưa có store
 # Hoặc: npm run db:reset  # Để làm mới và nạp lại menu từ đầu
 npm run dev               # http://localhost:4000
 ```
@@ -68,6 +68,7 @@ Git repository root/
     │   ├── .env.example
     │   ├── package.json
     │   ├── db/schema.sql         # Cấu trúc bảng PostgreSQL
+    │   ├── db/migrations/        # Migrations idempotent cho categories, products, tables/QR
     │   ├── scripts/
     │   │   ├── initDb.js         # Nạp schema & menu món Nhật (hỗ trợ --reset)
     │   │   └── loadTest.js       # Kịch bản test chịu tải WebSocket + REST
@@ -75,11 +76,14 @@ Git repository root/
     │       ├── domain/orders/constants.js
     │       ├── application/
     │       │   ├── errors/AppError.js
-    │       │   └── services/{auth,menu,orders,tables}.service.js
+    │       │   └── services/{auth,categories,menu,orders,products,tables}.service.js
     │       ├── infrastructure/
     │       │   ├── config/{database,env}.js
-    │       │   ├── persistence/{auth,menu,orders,tables}.repository.js
-    │       │   └── realtime/{publisher,socket}.js
+    │       │   ├── persistence/{auth,categories,menu,orders,products,tables}.repository.js
+    │       │   ├── realtime/
+    │       │   │   ├── handlers/{message,presence,system}.handler.js
+    │       │   │   └── {publisher,socket}.js
+    │       │   └── storage/productImages.js
     │       ├── presentation/http/
     │       │   ├── app.js
     │       │   ├── controllers/
@@ -107,18 +111,73 @@ Git repository root/
 
 ## Các tính năng kỹ thuật & Tối ưu hiệu năng (≥ 50 user đồng thời)
 
-| Vấn đề | Giải pháp đã triển khai |
+### Real-time
+
+```text
+React (Socket.IO Client) ── WebSocket / polling ──┐
+                                                  v
+React (REST API) ───────────────────────────> Express + HTTP Server
+                                                  │
+                                                  └── Socket.IO Server
+                                                      ├── JWT staff → room store:{id}
+                                                      └── QR customer → room table:{id}
+```
+
+HTTP API và Socket.IO dùng chung HTTP server tại `PORT`. `CORS_ORIGINS` nhận danh sách origin
+phân cách bằng dấu phẩy. Nhân viên xác thực bằng JWT handshake; khách dùng token QR. Event
+`message:send` chỉ dành cho nhân viên cùng cửa hàng, tối đa 10 tin nhắn/10 giây và 1.000 ký tự/tin.
+Tin nhắn chỉ broadcast tạm thời trong room cửa hàng, không lưu vào database. `server:status` phản hồi
+trạng thái qua acknowledgement; `user:online`/`user:offline` phát khi trạng thái socket cuối cùng của
+nhân viên thay đổi. `notification` phát khi có đơn mới. Dữ liệu thao tác đơn hàng vẫn đi qua REST API.
+
+Kiểm thử kết nối, xác thực, room, presence, rate limit, status và reconnect:
+
+```bash
+cd qr-order/backend
+npm test
+```
+
+### Categories, products và tables APIs
+
+Các endpoint quản trị yêu cầu `Authorization: Bearer <JWT>` và được giới hạn theo `storeId`
+trong token. Tạo/sửa/xóa là quyền `admin`; nhân viên cũng có thể đổi trạng thái món hoặc bàn.
+
+| Module | Endpoints |
 | --- | --- |
-| Quá tải DB | `pg.Pool` (max 20), mọi query async; insert món bằng 1 câu `unnest`; lấy đơn + món bằng 1 query `json_agg` (không N+1) |
-| Khách mở menu cùng lúc | Cache menu 30s (xóa ngay khi sửa menu), cache `token → bàn` 60s |
-| Socket trễ / tốn tài nguyên | Phân room `store:{id}` (nhân viên) và `table:{id}` (khách) → sự kiện chỉ đến đúng nhóm; tắt `perMessageDeflate`; giới hạn `maxHttpBufferSize`; khách chỉ nhận, mọi thao tác ghi đi qua REST có validate |
-| Gửi trùng đơn (bấm 2 lần, mạng chập) | `idempotencyKey` + `UNIQUE` trong DB; request đến sau nhận lại đơn cũ |
-| 2 nhân viên bấm cùng lúc | `UPDATE ... WHERE status = ANY(nguồn hợp lệ)` (optimistic) → người đến sau nhận 409 |
-| Thanh toán đua với đơn mới | `SELECT ... FOR UPDATE` các đơn mở của bàn trong transaction |
-| Gian lận giá | Giá & tên món lấy từ DB khi đặt, không tin client; lưu snapshot vào `order_items` |
-| Spam | Rate limit gửi order theo **bàn** (không theo IP, vì cả quán dùng chung WiFi) |
-| Frontend re-render | Store chuẩn hóa theo id, selector nhỏ (`useQuantity`), `React.memo`, `useShallow`, tách `CartBar`, code-splitting theo trang |
-| Mất kết nối | Socket tự reconnect + `connectionStateRecovery`; mỗi lần connect tải lại danh sách từ REST để bù sự kiện đã lỡ |
+| Categories | `GET /api/categories` (page, limit, search, status, sort); `GET /api/categories/:id`; `POST`, `PUT /:id`, `DELETE /:id` |
+| Products | `GET /api/products` (page, limit, search, categoryId, status, minPrice, maxPrice, sortBy, sort); `GET /:id`; `POST`, `PUT /:id`, `PATCH /:id/status`, `DELETE /:id` |
+| Tables | `GET /api/tables` (page, limit, search, location, status); `GET /:id`; `POST`, `PUT /:id`, `PATCH /:id/status`, `DELETE /:id` |
+| QR | `GET /api/tables/:id/qr`, `GET /:id/qr/download`, `POST /:id/qr/regenerate`; public verify: `GET /api/public/tables/verify/:token` |
+
+Category/product/table deletes are soft deletes. Category deletion returns `409` while active products
+still reference it; table deletion returns `409` while open orders exist. Product prices are stored as
+integer VND in the existing PostgreSQL `INT` column to avoid floating-point rounding. Product images
+are accepted as multipart field `image` (JPEG/PNG/WEBP, max 5 MB), checked by MIME and file signature,
+stored under `UPLOAD_DIR/products` with random filenames, and served from `/uploads/products/`.
+
+Postman collection: `backend/postman/qr-order.postman_collection.json`. Set its `baseUrl` and `token`
+variables before sending protected requests.
+
+Apply the idempotent schema migrations and run tests from `qr-order/backend`:
+
+```bash
+npm run db:init
+npm test
+```
+
+The existing database uses integer IDs and `menu_items` for products; migrations extend those tables
+without replacing data or changing the existing order-history foreign keys.
+
+```mermaid
+erDiagram
+  STORES ||--o{ CATEGORIES : owns
+  STORES ||--o{ MENU_ITEMS : owns
+  CATEGORIES ||--o{ MENU_ITEMS : categorizes
+  STORES ||--o{ TABLES : owns
+  TABLES ||--o{ ORDERS : receives
+  MENU_ITEMS ||--o{ ORDER_ITEMS : snapshots
+  ORDERS ||--|{ ORDER_ITEMS : contains
+```
 
 ---
 

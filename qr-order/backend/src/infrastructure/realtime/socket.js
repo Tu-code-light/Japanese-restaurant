@@ -1,6 +1,9 @@
 import { Server } from 'socket.io';
 import { logger } from '../../shared/utils/logger.js';
 import { bindIo, rooms } from './publisher.js';
+import { registerMessageHandler } from './handlers/message.handler.js';
+import { registerPresenceHandler } from './handlers/presence.handler.js';
+import { registerSystemHandler } from './handlers/system.handler.js';
 
 /**
  * Khởi tạo Socket.io, gắn vào HTTP server.
@@ -28,6 +31,7 @@ export function initSocket(httpServer, { corsOrigins, verifyToken, resolveTableT
     pingTimeout: 20_000,
     connectionStateRecovery: { maxDisconnectionDuration: 2 * 60_000 }, // mất mạng ngắn vẫn nhận lại sự kiện
   });
+  const presence = new Map();
 
   /**
    * Xác thực khi handshake:
@@ -66,7 +70,12 @@ export function initSocket(httpServer, { corsOrigins, verifyToken, resolveTableT
       socket.join(`${rooms.store(storeId)}:public`); // chỉ nhận tín hiệu menu:changed
     }
 
+    logger.info(`Socket connected (${kind})`, socket.id);
+    registerPresenceHandler(io, socket, presence);
+    registerMessageHandler(io, socket);
+    registerSystemHandler(io, socket);
     socket.on('error', (err) => logger.warn('Socket error', err?.message));
+    socket.on('disconnect', (reason) => logger.info('Socket disconnected', socket.id, reason));
   });
 
   bindIo(io);

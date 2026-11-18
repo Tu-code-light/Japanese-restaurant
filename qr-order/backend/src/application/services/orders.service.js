@@ -62,6 +62,8 @@ export function createOrdersService({
       let orderId;
       try {
         orderId = await withTransaction(async (client) => {
+          const orderable = await tablesService.lockForOrder(client, table.storeId, table.id);
+          if (!orderable) throw AppError.notFound('Bàn không còn nhận order');
           const id = await ordersRepository.insertOrder(client, {
             storeId: table.storeId,
             tableId: table.id,

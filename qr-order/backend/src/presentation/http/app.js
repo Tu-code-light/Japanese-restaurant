@@ -9,6 +9,8 @@ import { createMenuRoutes } from './routes/menu.routes.js';
 import { createOrdersRoutes } from './routes/orders.routes.js';
 import { createTablesRoutes } from './routes/tables.routes.js';
 import { createPublicRoutes } from './routes/public.routes.js';
+import { createCategoriesRoutes } from './routes/categories.routes.js';
+import { createProductsRoutes } from './routes/products.routes.js';
 
 /** Tạo Express app (tách khỏi server.js để dễ test) */
 export function createApp({ env, query, apiLimiter, limiters, controllers, authMiddleware }) {
@@ -21,6 +23,7 @@ export function createApp({ env, query, apiLimiter, limiters, controllers, authM
   app.use(compression());
   app.use(express.json({ limit: '100kb' }));
   app.use('/api', apiLimiter);
+  app.use('/uploads', express.static(env.uploadDirectory ?? 'uploads', { dotfiles: 'deny', index: false }));
 
   // Health check: kiểm tra cả kết nối DB
   app.get('/api/health', async (_req, res, next) => {
@@ -52,6 +55,22 @@ export function createApp({ env, query, apiLimiter, limiters, controllers, authM
     '/api/tables',
     createTablesRoutes({
       tablesController: controllers.tables,
+      authenticate: authMiddleware.authenticate,
+      authorize: authMiddleware.authorize,
+    }),
+  );
+  app.use(
+    '/api/categories',
+    createCategoriesRoutes({
+      categoriesController: controllers.categories,
+      authenticate: authMiddleware.authenticate,
+      authorize: authMiddleware.authorize,
+    }),
+  );
+  app.use(
+    '/api/products',
+    createProductsRoutes({
+      productsController: controllers.products,
       authenticate: authMiddleware.authenticate,
       authorize: authMiddleware.authorize,
     }),
