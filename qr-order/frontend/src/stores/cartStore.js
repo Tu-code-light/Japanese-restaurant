@@ -43,7 +43,14 @@ export const useCartStore = create(
           else next[id] = { ...cur, quantity: cur.quantity - 1 };
           return { items: next, submitKey: null };
         }),
-
+      /** Xóa hẳn 1 món khỏi giỏ bất kể số lượng */
+      removeAll: (id) =>
+        set((s) => {
+          if (!s.items[id]) return s;
+          const next = { ...s.items };
+          delete next[id];
+          return { items: next, submitKey: null };
+        }),
       setNote: (note) => set({ note }),
 
       /** Lấy (hoặc tạo) khóa idempotency cho lần gửi hiện tại */

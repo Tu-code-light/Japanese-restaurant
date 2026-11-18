@@ -159,6 +159,9 @@ export const messages = {
     table: 'Bàn',
     time: 'Thời gian',
     status: 'Trạng thái',
+    clearCart: 'Xóa tất cả',
+    confirmClearCart: 'Bạn muốn xóa toàn bộ món trong giỏ?',
+    emptyCart: 'Giỏ hàng đang trống. Hãy chọn thêm món từ thực đơn nhé!',
   },
   en: {
     language: 'Language',
@@ -317,6 +320,9 @@ export const messages = {
     table: 'Table',
     time: 'Time',
     status: 'Status',
+    clearCart: 'Clear all',
+    confirmClearCart: 'Remove all items from your cart?',
+    emptyCart: 'Your cart is empty. Add some dishes from the menu!',
   },
 };
 
