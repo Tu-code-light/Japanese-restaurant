@@ -523,3 +523,486 @@ textarea.input { resize: vertical; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+/* ==========================================================================
+   TASK-504 & TASK-505: Tabs, Confirmation Modal & Real-time Stepper
+   ========================================================================== */
+.customer-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px;
+  border-radius: 12px;
+}
+.customer-tabs__btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.customer-tabs__btn--active {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--line);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-pill--active {
+  background: var(--brand);
+  color: var(--brand-ink);
+  animation: pulse-ring 2s infinite ease-in-out;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(169, 52, 43, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(169, 52, 43, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(169, 52, 43, 0); }
+}
+
+/* Order Confirmation Modal [TASK-504] */
+.order-confirm-sheet {
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+}
+.order-confirm__icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: #eef5ee;
+  color: var(--tea);
+  font-size: 1.6rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #c2dec0;
+}
+.order-confirm__header h2 {
+  margin-top: 4px;
+  margin-bottom: 6px;
+  font-size: 1.35rem;
+}
+.order-confirm__body {
+  text-align: left;
+  background: #faf7f2;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  margin: 16px 0;
+}
+.order-confirm__body h3 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.order-confirm__list {
+  margin: 0;
+  padding: 0;
+}
+.order-confirm__list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 0.92rem;
+}
+.order-confirm__list li:last-child {
+  border-bottom: none;
+}
+.order-confirm__total {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 1.1rem;
+}
+.order-confirm__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* Banner nhắc nhở đơn đang nấu */
+.customer-active-banner {
+  background: #fdfaf3;
+  border: 1px solid #ebd7af;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.customer-active-banner:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(184, 134, 11, 0.12);
+}
+
+/* Order Stepper Timeline [TASK-505] */
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin: 16px 0 18px;
+  padding: 0 4px;
+}
+.stepper::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: var(--line);
+  z-index: 0;
+}
+.stepper__step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  text-align: center;
+}
+.stepper__node {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--line);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  transition: all 200ms ease;
+}
+.stepper__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.2;
+}
+.stepper__step--completed .stepper__node {
+  background: #eef5ee;
+  border-color: var(--tea);
+  color: var(--tea);
+}
+.stepper__step--completed .stepper__label {
+  color: var(--tea);
+}
+.stepper__step--current .stepper__node {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+  box-shadow: 0 0 0 4px rgba(169, 52, 43, 0.2);
+  transform: scale(1.1);
+}
+.stepper__step--current .stepper__label {
+  color: var(--brand);
+  font-weight: 700;
+}
+.stepper--cancelled {
+  padding: 10px 14px;
+  background: #fdf2f1;
+  border: 1px solid #f6cfcb;
+  border-radius: 8px;
+}
+.stepper__cancelled-text {
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+/* Order Tracking View */
+.tracking-view__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.tracking-empty {
+  padding: 40px 20px;
+  text-align: center;
+}
+.tracking-empty__icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+}
+.tracking-bill-summary {
+  background: #f8f6f0;
+  border: 1px solid #dfd8cb;
+  margin-bottom: 16px;
+}
+.tracking-bill-summary__amount {
+  font-size: 1.4rem;
+  color: var(--brand);
+}
+.order-card--tracking {
+  margin-bottom: 14px;
+}
+
+/* ==========================================================================
+   TASK-701: Menu Admin UI & Modal
+   ========================================================================== */
+.menu-filter-bar {
+  padding: 12px;
+}
+.search-input {
+  flex: 2;
+  min-width: 200px;
+}
+.category-select {
+  flex: 1;
+  min-width: 150px;
+}
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.menu-card--admin {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.menu-card__thumb {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.menu-card__desc {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.menu-card__actions {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  justify-content: flex-end;
+}
+.btn-sm {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 0.82rem;
+}
+.menu-item-sheet {
+  max-width: 480px;
+  margin: 0 auto;
+}
+.menu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.form-checkbox {
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   TASK-702: Sales Report Dashboard
+   ========================================================================== */
+.reports-page {
+  animation: fadeIn 200ms ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  border-left: 4px solid var(--line);
+}
+.kpi-card:nth-child(1) { border-left-color: var(--brand); }
+.kpi-card:nth-child(2) { border-left-color: #3b82f6; }
+.kpi-card:nth-child(3) { border-left-color: #f59e0b; }
+.kpi-card:nth-child(4) { border-left-color: var(--tea); }
+
+.kpi-card__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.kpi-card__val {
+  font-size: 1.65rem;
+  letter-spacing: -0.02em;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+.kpi-card__sub {
+  font-size: 0.82rem;
+}
+.text-brand { color: var(--brand); }
+.text-tea { color: var(--tea); }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 20px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 20px; }
+
+/* Biểu đồ cột Bar Chart */
+.chart-card {
+  padding: 20px;
+}
+.bar-chart {
+  margin-top: 24px;
+  height: 220px;
+  position: relative;
+  border-bottom: 2px solid var(--line);
+}
+.bar-chart__bars {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  gap: 12px;
+  padding: 0 10px;
+}
+.bar-chart__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  position: relative;
+}
+.bar-chart__bar {
+  width: 100%;
+  max-width: 44px;
+  background: linear-gradient(180deg, var(--brand) 0%, var(--brand-dark) 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 350ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms ease;
+  cursor: pointer;
+}
+.bar-chart__col:hover .bar-chart__bar {
+  opacity: 0.88;
+  transform: scaleY(1.02);
+}
+.bar-chart__label {
+  position: absolute;
+  bottom: -24px;
+  font-size: 0.74rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.bar-chart__tooltip {
+  position: absolute;
+  top: -46px;
+  background: #292621;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+  white-space: nowrap;
+  z-index: 10;
+}
+.bar-chart__col:hover .bar-chart__tooltip {
+  opacity: 1;
+}
+
+/* Bảng báo cáo */
+.reports-two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+.table-responsive {
+  overflow-x: auto;
+}
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-top: 10px;
+}
+.report-table th, .report-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.report-table th {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  text-align: left;
+}
+.report-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--line);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.rank-badge--1 { background: #fef3c7; color: #b45309; }
+.rank-badge--2 { background: #f1f5f9; color: #475569; }
+.rank-badge--3 { background: #fed7aa; color: #c2410c; }
+

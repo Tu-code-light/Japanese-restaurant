@@ -14,8 +14,8 @@ export default function AdminTablesPage() {
 
   const load = useCallback(async () => {
     try {
-      const result = await api.get('/tables', { auth: true });
-      setTables(result.items);
+      const res = await api.get('/tables', { auth: true });
+      setTables(Array.isArray(res) ? res : res?.items || []);
     } catch (e) {
       setError(e.message);
     }
@@ -35,10 +35,21 @@ export default function AdminTablesPage() {
 
   const showQr = async (id) => {
     try {
-      setQr(await api.get(`/tables/${id}/qr`, { auth: true }));
+      const origin = window.location.origin;
+      setQr(await api.get(`/tables/${id}/qr?origin=${encodeURIComponent(origin)}`, { auth: true }));
     } catch (e) {
       setError(e.message);
     }
+  };
+
+  const downloadQrPng = (name, dataUrl) => {
+    const filename = `QR-${name.replace(/\s+/g, '_')}.png`;
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const createTable = async (e) => {
@@ -85,7 +96,12 @@ export default function AdminTablesPage() {
             <p className="muted break">{qr.url}</p>
             <div className="row">
               <button className="btn" onClick={() => setQr(null)}>{t('close')}</button>
-              <button className="btn btn-primary" onClick={() => window.print()}>{t('print')}</button>
+              <button className="btn btn-primary" onClick={() => downloadQrPng(qr.name, qr.dataUrl)}>
+                📥 {t('downloadQr') || 'Tải ảnh QR (.PNG)'}
+              </button>
+              <button className="btn" onClick={() => window.print()}>
+                🖨️ {t('print') || 'In'}
+              </button>
             </div>
           </div>
         </div>

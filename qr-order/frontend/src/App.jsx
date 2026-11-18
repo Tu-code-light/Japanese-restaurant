@@ -9,6 +9,7 @@ const StaffLoginPage = lazy(() => import('./pages/StaffLoginPage'));
 const StaffDashboardPage = lazy(() => import('./pages/StaffDashboardPage'));
 const AdminTablesPage = lazy(() => import('./pages/AdminTablesPage'));
 const MenuManagePage = lazy(() => import('./pages/MenuManagePage'));
+const SalesReportPage = lazy(() => import('./pages/SalesReportPage'));
 const LanguageSelectPage = lazy(() => import('./pages/LanguageSelectPage'));
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
           <Route index element={<StaffDashboardPage />} />
           <Route path="tables" element={<AdminTablesPage />} />
           <Route path="menu" element={<MenuManagePage />} />
+          <Route path="reports" element={<SalesReportPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

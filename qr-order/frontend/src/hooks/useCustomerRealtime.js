@@ -30,6 +30,8 @@ export function useCustomerRealtime(tableToken, onMenuChanged) {
     const socket = createSocket({ tableToken });
     socket.on('connect', loadOrders); // tải lần đầu + đồng bộ lại sau mỗi lần reconnect
     socket.on('order:updated', upsert);
+    socket.on('order_status_updated', upsert);
+    socket.on('new_order', upsert);
     socket.on('menu:changed', () => menuCb.current?.());
 
     return () => {

@@ -9,6 +9,7 @@ import { createOrdersService } from '../application/services/orders.service.js';
 import { createTablesService } from '../application/services/tables.service.js';
 import { createCategoriesService } from '../application/services/categories.service.js';
 import { createProductsService } from '../application/services/products.service.js';
+import { createReportsService } from '../application/services/reports.service.js';
 import { env } from '../infrastructure/config/env.js';
 import { withTransaction } from '../infrastructure/config/database.js';
 import { authRepository } from '../infrastructure/persistence/auth.repository.js';
@@ -17,6 +18,7 @@ import { ordersRepository } from '../infrastructure/persistence/orders.repositor
 import { tablesRepository } from '../infrastructure/persistence/tables.repository.js';
 import { categoriesRepository } from '../infrastructure/persistence/categories.repository.js';
 import { productsRepository } from '../infrastructure/persistence/products.repository.js';
+import { reportsRepository } from '../infrastructure/persistence/reports.repository.js';
 import { saveProductImage, deleteProductImage } from '../infrastructure/storage/productImages.js';
 import { publisher } from '../infrastructure/realtime/publisher.js';
 import { TtlCache } from '../shared/utils/ttlCache.js';
@@ -27,6 +29,7 @@ import { createPublicController } from '../presentation/http/controllers/public.
 import { createTablesController } from '../presentation/http/controllers/tables.controller.js';
 import { createCategoriesController } from '../presentation/http/controllers/categories.controller.js';
 import { createProductsController } from '../presentation/http/controllers/products.controller.js';
+import { createReportsController } from '../presentation/http/controllers/reports.controller.js';
 import { createAuthenticate, authorize } from '../presentation/http/middlewares/auth.js';
 
 export const verifyToken = (token) => {
@@ -65,6 +68,8 @@ const productsService = createProductsService({
   onMenuChanged: (storeId) => menuService.invalidate(storeId),
 });
 
+const reportsService = createReportsService({ reportsRepository });
+
 const authService = createAuthService({
   authRepository,
   comparePassword: (password, hash) => bcrypt.compare(password, hash),
@@ -89,6 +94,7 @@ export const controllers = {
   tables: createTablesController(tablesService),
   categories: createCategoriesController(categoriesService),
   products: createProductsController(productsService),
+  reports: createReportsController(reportsService),
 };
 
 export const authMiddleware = {

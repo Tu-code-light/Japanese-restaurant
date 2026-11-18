@@ -11,8 +11,6 @@ export function createMenuService({ menuRepository, publicMenuCache, publisher }
   };
 
   return {
-    invalidate,
-
     /** Menu cho khách: chỉ món đang bán */
     async getPublicMenu(storeId) {
       const cached = publicMenuCache.get(storeId);
@@ -30,7 +28,6 @@ export function createMenuService({ menuRepository, publicMenuCache, publisher }
 
     async createItem(storeId, dto) {
       const item = await menuRepository.create(storeId, dto);
-      if (!item) throw AppError.badRequest('Danh mục không tồn tại hoặc đang bị ẩn');
       invalidate(storeId);
       return item;
     },
@@ -40,6 +37,12 @@ export function createMenuService({ menuRepository, publicMenuCache, publisher }
       if (!item) throw AppError.notFound('Không tìm thấy món');
       invalidate(storeId);
       return item;
+    },
+
+    async deleteItem(storeId, id) {
+      const result = await menuRepository.delete(storeId, id);
+      invalidate(storeId);
+      return result;
     },
   };
 }

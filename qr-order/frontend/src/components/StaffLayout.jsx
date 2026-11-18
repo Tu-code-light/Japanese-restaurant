@@ -23,6 +23,7 @@ export default function StaffLayout() {
         <NavLink to="/staff" end>{t('staffOrders')}</NavLink>
         <NavLink to="/staff/tables">{t('tablesQr')}</NavLink>
         <NavLink to="/staff/menu">{t('menu')}</NavLink>
+        {user?.role === 'admin' && <NavLink to="/staff/reports">{t('reports') || 'Báo cáo'}</NavLink>}
         <span className="spacer" />
         <span className="muted">{user?.name}</span>
         <LanguageSwitcher />

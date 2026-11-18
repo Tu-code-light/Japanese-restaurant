@@ -50,7 +50,13 @@ export const useCartStore = create(
       ensureSubmitKey: () => {
         let key = get().submitKey;
         if (!key) {
-          key = crypto.randomUUID();
+          // Polyfill cho trình duyệt cũ không hỗ trợ crypto.randomUUID()
+          key = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = (Math.random() * 16) | 0;
+                return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+              });
           set({ submitKey: key });
         }
         return key;

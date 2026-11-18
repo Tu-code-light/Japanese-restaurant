@@ -17,4 +17,15 @@ export const createMenuController = (menuService) => ({
     }
     sendSuccess(res, await menuService.updateItem(req.user.storeId, req.params.id, req.body), 'Đã cập nhật món');
   }),
+
+  delete: asyncHandler(async (req, res) => {
+    const result = await menuService.deleteItem(req.user.storeId, req.params.id);
+    sendSuccess(
+      res,
+      result,
+      result.softDeleted
+        ? 'Món đã có trong đơn cũ nên được chuyển sang trạng thái ngưng bán'
+        : 'Đã xóa món ăn thành công',
+    );
+  }),
 });

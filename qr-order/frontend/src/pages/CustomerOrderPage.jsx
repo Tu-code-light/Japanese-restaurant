@@ -8,8 +8,9 @@ import { OrderCard } from '../components/OrderCard';
 import { useCartStore, useCartCount, useCartTotal } from '../stores/cartStore';
 import { useCustomerOrders } from '../stores/ordersStore';
 import { useTranslation } from '../lib/i18n';
-import { translateCategory, translateItemName } from '../lib/menuTranslations';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { OrderConfirmationModal } from '../components/OrderConfirmationModal';
+import { OrderTrackingView } from '../components/OrderTrackingView';
 
 /** Một đơn của bàn: subscribe theo id để chỉ render lại khi chính đơn đó đổi */
 const CustomerOrderRow = memo(function CustomerOrderRow({ id }) {
@@ -45,14 +46,14 @@ function CartSheet({ tableToken, onClose, onUnavailable }) {
     setSubmitting(true);
     setError(null);
     try {
-      await api.post('/public/orders', {
+      const createdOrder = await api.post('/public/orders', {
         tableToken,
         idempotencyKey: ensureSubmitKey(), // gửi lại do mạng lỗi vẫn dùng đúng key này -> không tạo đơn trùng
         note,
         items: list.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
       });
       clear();
-      onClose(true);
+      onClose(true, createdOrder);
     } catch (e) {
       if (e.status === 409 && e.data?.unavailable) onUnavailable?.();
       setError(e.message);
@@ -68,7 +69,7 @@ function CartSheet({ tableToken, onClose, onUnavailable }) {
         <ul className="sheet__list">
           {list.map((i) => (
             <li key={i.menuItemId}>
-              <span>{translateItemName(i.name, language)}</span>
+              <span>{i.name}</span>
               <span className="qty">
                 <button className="btn-round" onClick={() => useCartStore.getState().remove(i.menuItemId)}>−</button>
                 <span className="qty__n">{i.quantity}</span>
@@ -116,6 +117,11 @@ export default function CustomerOrderPage() {
   const [error, setError] = useState(null);
   const [showCart, setShowCart] = useState(false);
   const [toast, setToast] = useState(null);
+  
+  // Tab điều hướng: 'menu' (Thực đơn) hoặc 'tracking' (Theo dõi đơn Realtime)
+  const [activeTab, setActiveTab] = useState('menu');
+  // Modal xác nhận đơn hàng thành công [TASK-504]
+  const [confirmedOrder, setConfirmedOrder] = useState(null);
 
   // Giỏ hàng gắn với bàn hiện tại
   useEffect(() => {
@@ -146,11 +152,24 @@ export default function CustomerOrderPage() {
   useCustomerRealtime(token, loadMenu);
 
   const orderIds = useCustomerOrders((s) => s.ids);
-  const visibleOrderIds = useMemo(() => [...orderIds].reverse(), [orderIds]);
+  const ordersById = useCustomerOrders((s) => s.byId);
 
-  const handleCloseCart = useCallback((sent) => {
+  // Đếm số đơn đang mở (chưa thanh toán / chưa hủy)
+  const activeOrdersCount = useMemo(() => {
+    return orderIds.filter((id) => {
+      const o = ordersById[id];
+      return o && o.status !== 'paid' && o.status !== 'cancelled';
+    }).length;
+  }, [orderIds, ordersById]);
+
+  const handleCloseCart = useCallback((sent, createdOrder) => {
     setShowCart(false);
-    if (sent) {
+    if (sent && createdOrder) {
+      // Upsert vào store ngay lập tức để đồng bộ realtime
+      useCustomerOrders.getState().upsert(createdOrder);
+      // Hiển thị modal xác nhận đơn hàng [TASK-504]
+      setConfirmedOrder(createdOrder);
+    } else if (sent) {
       setToast(t('orderSent'));
       setTimeout(() => setToast(null), 4000);
     }
@@ -168,27 +187,88 @@ export default function CustomerOrderPage() {
         </div>
         <h1>{data.store.name}</h1>
         <p className="customer__table"><span aria-hidden="true">⌖</span>{data.table.name} · {data.table.area}</p>
+
+        {/* Tab chuyển đổi linh hoạt giữa Thực đơn & Theo dõi đơn [TASK-505] */}
+        <nav className="customer-tabs" aria-label="Customer views">
+          <button
+            className={`customer-tabs__btn ${activeTab === 'menu' ? 'customer-tabs__btn--active' : ''}`}
+            onClick={() => setActiveTab('menu')}
+          >
+            🍜 {t('tabMenu') || 'Thực đơn'}
+          </button>
+          <button
+            className={`customer-tabs__btn ${activeTab === 'tracking' ? 'customer-tabs__btn--active' : ''}`}
+            onClick={() => setActiveTab('tracking')}
+          >
+            ⏱ {t('tabTracking') || 'Đơn của bàn'}
+            {orderIds.length > 0 && (
+              <span className={`badge-pill ${activeOrdersCount > 0 ? 'badge-pill--active' : ''}`}>
+                {activeOrdersCount > 0 ? activeOrdersCount : orderIds.length}
+              </span>
+            )}
+          </button>
+        </nav>
       </header>
 
       {toast && <div className="toast">{toast}</div>}
 
-      {visibleOrderIds.length > 0 && (
-        <section className="section">
-          <h2>{t('customerOrders')}</h2>
-          {visibleOrderIds.map((id) => <CustomerOrderRow key={id} id={id} />)}
-        </section>
+      {/* Hiển thị View theo Tab đã chọn */}
+      {activeTab === 'tracking' ? (
+        <OrderTrackingView
+          tableName={data.table.name}
+          onGoToMenu={() => setActiveTab('menu')}
+        />
+      ) : (
+        <>
+          {/* Nhắc nhở nhanh khi bàn có đơn đang xử lý */}
+          {activeOrdersCount > 0 && (
+            <div className="card customer-active-banner row row--between" onClick={() => setActiveTab('tracking')}>
+              <div>
+                <strong>⏱ {t('activeOrdersNotice', { count: activeOrdersCount }) || `Bàn có ${activeOrdersCount} đơn đang được phục vụ`}</strong>
+                <p className="muted">{t('clickToTrack') || 'Nhấn để xem trạng thái bếp nấu theo thời gian thực'}</p>
+              </div>
+              <button className="btn btn-sm">{t('trackNow') || 'Xem ngay'}</button>
+            </div>
+          )}
+
+          {data.menu.map((cat) => (
+            <section className="section" key={cat.id}>
+              <h2>{cat.name}</h2>
+              {cat.items.map((item) => <MenuItemCard key={item.id} item={item} />)}
+            </section>
+          ))}
+        </>
       )}
 
-      {data.menu.map((cat) => (
-        <section className="section" key={cat.id}>
-          <h2>{translateCategory(cat.name, language)}</h2>
-          {cat.items.map((item) => <MenuItemCard key={item.id} item={item} />)}
-        </section>
-      ))}
+      {/* Thanh giỏ hàng chỉ hiện khi ở tab menu */}
+      {activeTab === 'menu' && (
+        <>
+          <div className="cart-spacer" />
+          <CartBar onOpen={() => setShowCart(true)} />
+        </>
+      )}
 
-      <div className="cart-spacer" />
-      <CartBar onOpen={() => setShowCart(true)} />
-      {showCart && <CartSheet tableToken={token} onClose={handleCloseCart} onUnavailable={loadMenu} />}
+      {/* Sheet xem giỏ hàng */}
+      {showCart && (
+        <CartSheet
+          tableToken={token}
+          onClose={handleCloseCart}
+          onUnavailable={loadMenu}
+        />
+      )}
+
+      {/* [TASK-504] Modal Xác nhận Đơn hàng Thành công */}
+      {confirmedOrder && (
+        <OrderConfirmationModal
+          order={confirmedOrder}
+          tableName={data.table.name}
+          onClose={() => setConfirmedOrder(null)}
+          onTrackOrder={() => {
+            setConfirmedOrder(null);
+            setActiveTab('tracking');
+          }}
+        />
+      )}
     </div>
   );
 }

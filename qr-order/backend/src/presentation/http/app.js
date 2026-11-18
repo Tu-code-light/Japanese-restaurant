@@ -11,6 +11,7 @@ import { createTablesRoutes } from './routes/tables.routes.js';
 import { createPublicRoutes } from './routes/public.routes.js';
 import { createCategoriesRoutes } from './routes/categories.routes.js';
 import { createProductsRoutes } from './routes/products.routes.js';
+import { createReportsRoutes } from './routes/reports.routes.js';
 
 /** Tạo Express app (tách khỏi server.js để dễ test) */
 export function createApp({ env, query, apiLimiter, limiters, controllers, authMiddleware }) {
@@ -92,6 +93,14 @@ export function createApp({ env, query, apiLimiter, limiters, controllers, authM
     }),
   );
 
+    app.use(
+    '/api/reports',
+    createReportsRoutes({
+      reportsController: controllers.reports,
+      authenticate: authMiddleware.authenticate,
+      authorize: authMiddleware.authorize,
+    }),
+  );
   app.use(notFoundHandler);
   app.use(createErrorHandler(env));
   return app;

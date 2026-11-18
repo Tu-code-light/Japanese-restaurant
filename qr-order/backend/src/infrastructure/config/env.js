@@ -31,7 +31,10 @@ if (!parsed.success) {
 export const env = {
   ...parsed.data,
   isProd: parsed.data.NODE_ENV === 'production',
-  corsOrigins: parsed.data.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean),
+  corsOrigins:
+    parsed.data.NODE_ENV === 'production'
+      ? parsed.data.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+      : (origin, callback) => callback(null, true), // Trong môi trường dev: cho phép mọi thiết bị trong LAN/tunnel kết nối
   uploadDirectory: path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     '../../../',
