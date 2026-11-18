@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 /**
@@ -16,6 +18,7 @@ const schema = z.object({
   JWT_EXPIRES_IN: z.string().default('12h'),
   CUSTOMER_APP_URL: z.string().url().default('http://localhost:5173'),
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
+  UPLOAD_DIR: z.string().min(1).default('uploads'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -29,4 +32,9 @@ export const env = {
   ...parsed.data,
   isProd: parsed.data.NODE_ENV === 'production',
   corsOrigins: parsed.data.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean),
+  uploadDirectory: path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../../',
+    parsed.data.UPLOAD_DIR,
+  ),
 };

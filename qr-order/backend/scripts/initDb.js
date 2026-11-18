@@ -20,6 +20,16 @@ async function main() {
   await pool.query(schema);
   console.log('✔ Đã tạo schema');
 
+  const migrationsDir = path.join(here, '../db/migrations');
+  const migrations = (await fs.readdir(migrationsDir))
+    .filter((file) => file.endsWith('.sql'))
+    .sort();
+  for (const file of migrations) {
+    const migration = await fs.readFile(path.join(migrationsDir, file), 'utf8');
+    await pool.query(migration);
+    console.log(`✔ Đã áp dụng migration ${file}`);
+  }
+
   const reset = process.argv.includes('--reset') || process.argv.includes('--force');
   if (reset) {
     await pool.query('TRUNCATE stores, users, tables, categories, menu_items, orders, order_items RESTART IDENTITY CASCADE;');
@@ -27,7 +37,7 @@ async function main() {
   } else {
     const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM stores');
     if (rows[0].n > 0) {
-      console.log('• DB đã có dữ liệu. Dùng "npm run db:reset" nếu muốn nạp lại từ đầu theo menu mới.');
+      console.log('• DB đã có dữ liệu, bỏ qua bước seed.');
       return;
     }
   }

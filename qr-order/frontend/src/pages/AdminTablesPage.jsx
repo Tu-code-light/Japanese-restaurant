@@ -14,7 +14,8 @@ export default function AdminTablesPage() {
 
   const load = useCallback(async () => {
     try {
-      setTables(await api.get('/tables', { auth: true }));
+      const result = await api.get('/tables', { auth: true });
+      setTables(result.items);
     } catch (e) {
       setError(e.message);
     }

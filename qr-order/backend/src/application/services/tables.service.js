@@ -3,28 +3,86 @@ import { AppError } from '../errors/AppError.js';
 export function createTablesService({
   tablesRepository,
   tableByTokenCache,
+  withTransaction,
   generateQrToken,
   generateQrDataUrl,
   customerAppUrl,
 }) {
   const buildOrderUrl = (token) => `${customerAppUrl.replace(/\/$/, '')}/t/${token}`;
+  const withOrderUrl = (table) => ({
+    ...table,
+    orderUrl: buildOrderUrl(table.qrToken),
+  });
 
   return {
-    async list(storeId) {
-      const tables = await tablesRepository.listByStore(storeId);
-      return tables.map((table) => ({ ...table, orderUrl: buildOrderUrl(table.qrToken) }));
+    lockForOrder(db, storeId, tableId) {
+      return tablesRepository.lockForOrder(db, storeId, tableId);
     },
 
-    async create(storeId, { name, area }) {
+    async list(storeId, filters) {
+      const result = await tablesRepository.listByStore(storeId, filters);
+      return { ...result, items: result.items.map(withOrderUrl) };
+    },
+
+    async get(storeId, tableId) {
+      const table = await tablesRepository.findById(tableId, storeId);
+      if (!table) throw AppError.notFound('Không tìm thấy bàn');
+      const { qrCode, ...details } = table;
+      return withOrderUrl(details);
+    },
+
+    async create(storeId, { name, area, location, capacity, status }) {
       // 24 byte ngẫu nhiên -> 48 ký tự hex: không đoán/liệt kê được (khác với id tăng dần).
       const qrToken = generateQrToken();
+      const url = buildOrderUrl(qrToken);
+      const qrCode = await generateQrDataUrl(url);
       try {
-        const table = await tablesRepository.create({ storeId, name, area, qrToken });
-        return { ...table, orderUrl: buildOrderUrl(table.qrToken) };
+        const table = await tablesRepository.create({
+          storeId,
+          name,
+          area: location ?? area ?? 'Tầng 1',
+          capacity,
+          status,
+          qrToken,
+          qrCode,
+        });
+        return withOrderUrl(table);
       } catch (err) {
         if (err.code === '23505') throw AppError.conflict(`Bàn "${name}" đã tồn tại`);
         throw err;
       }
+    },
+
+    async update(storeId, tableId, dto) {
+      try {
+        const table = await tablesRepository.update(storeId, tableId, dto);
+        if (!table) throw AppError.notFound('Không tìm thấy bàn');
+        if (dto.status === 'maintenance') tableByTokenCache.del(table.qrToken);
+        return withOrderUrl(table);
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        if (err.code === '23505') throw AppError.conflict(`Bàn "${dto.name ?? 'đã chọn'}" đã tồn tại`);
+        throw err;
+      }
+    },
+
+    async updateStatus(storeId, tableId, status) {
+      const existing = await tablesRepository.findById(tableId, storeId);
+      if (!existing) throw AppError.notFound('Không tìm thấy bàn');
+      const table = await tablesRepository.updateStatus(storeId, tableId, status);
+      if (!table) throw AppError.notFound('Không tìm thấy bàn');
+      tableByTokenCache.del(existing.qrToken);
+      return withOrderUrl(table);
+    },
+
+    async remove(storeId, tableId) {
+      const result = await withTransaction((db) =>
+        tablesRepository.softDeleteIfNoOpenOrders(db, storeId, tableId));
+      if (!result) throw AppError.notFound('Không tìm thấy bàn');
+      if (result.openOrders > 0) {
+        throw AppError.conflict('Không thể xóa bàn đang có đơn hàng chưa hoàn tất');
+      }
+      tableByTokenCache.del(result.qrToken);
     },
 
     /** Sinh ảnh QR (data URL PNG) cho 1 bàn */
@@ -33,8 +91,32 @@ export function createTablesService({
       if (!table) throw AppError.notFound('Không tìm thấy bàn');
 
       const url = buildOrderUrl(table.qrToken);
-      const dataUrl = await generateQrDataUrl(url);
+      const dataUrl = table.qrCode || await generateQrDataUrl(url);
+      if (!table.qrCode) await tablesRepository.updateQr(storeId, tableId, table.qrToken, dataUrl);
       return { tableId: table.id, name: table.name, url, dataUrl };
+    },
+
+    async regenerateQr(storeId, tableId) {
+      const table = await tablesRepository.findById(tableId, storeId);
+      if (!table) throw AppError.notFound('Không tìm thấy bàn');
+
+      const qrToken = generateQrToken();
+      const url = buildOrderUrl(qrToken);
+      const qrCode = await generateQrDataUrl(url);
+      const updated = await tablesRepository.updateQr(storeId, tableId, qrToken, qrCode);
+      if (!updated) throw AppError.notFound('Không tìm thấy bàn');
+      tableByTokenCache.del(table.qrToken);
+      return { ...withOrderUrl(updated), url, dataUrl: qrCode };
+    },
+
+    async verifyToken(token) {
+      const table = await this.resolveByToken(token);
+      return {
+        id: table.id,
+        name: table.name,
+        location: table.location,
+        status: table.status,
+      };
     },
 
     /**

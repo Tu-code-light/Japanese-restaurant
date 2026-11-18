@@ -33,7 +33,7 @@ async function main() {
   if (!login.ok) throw new Error(`Đăng nhập thất bại: ${login.json.message}`);
   const token = login.json.data.token;
 
-  const tables = (await api('/tables', { token })).json.data;
+  const tables = (await api('/tables', { token })).json.data.items;
   if (!tables.length) throw new Error('Chưa có bàn nào, hãy chạy npm run db:init');
 
   // 2. Nhân viên kết nối socket, ghi lại thời điểm nhận đơn

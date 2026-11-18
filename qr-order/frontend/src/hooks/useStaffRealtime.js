@@ -46,7 +46,9 @@ export function useStaffRealtime() {
 
     socket.on('order:new', (order) => {
       upsert(order);
-      beep();
+    });
+    socket.on('notification', (notification) => {
+      if (notification.type === 'order:new') beep();
     });
     socket.on('order:updated', (order) => {
       if (CLOSED.has(order.status)) prune(order.id);

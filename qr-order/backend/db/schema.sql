@@ -23,31 +23,45 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS tables (
   id          SERIAL PRIMARY KEY,
   store_id    INT NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-  name        VARCHAR(50) NOT NULL,
-  area        VARCHAR(50) NOT NULL DEFAULT 'Tầng 1',
+  name        VARCHAR(100) NOT NULL,
+  area        VARCHAR(255) NOT NULL DEFAULT 'Tầng 1',
+  capacity    INT NOT NULL DEFAULT 2 CHECK (capacity > 0),
+  status      VARCHAR(20) NOT NULL DEFAULT 'available'
+              CHECK (status IN ('available', 'occupied', 'reserved', 'maintenance')),
   qr_token    VARCHAR(64) NOT NULL UNIQUE,
+  qr_code     TEXT,
   is_active   BOOLEAN NOT NULL DEFAULT TRUE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at  TIMESTAMPTZ,
   UNIQUE (store_id, name)
 );
 
 CREATE TABLE IF NOT EXISTS categories (
-  id          SERIAL PRIMARY KEY,
-  store_id    INT NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-  name        VARCHAR(100) NOT NULL,
-  sort_order  INT NOT NULL DEFAULT 0
+  id           SERIAL PRIMARY KEY,
+  store_id     INT NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  name         VARCHAR(150) NOT NULL,
+  description  TEXT NOT NULL DEFAULT '',
+  image_url    TEXT,
+  status       BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order   INT NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at   TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS menu_items (
   id            SERIAL PRIMARY KEY,
   store_id      INT NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
   category_id   INT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-  name          VARCHAR(150) NOT NULL,
+  name          VARCHAR(255) NOT NULL,
   description   TEXT NOT NULL DEFAULT '',
   price         INT NOT NULL CHECK (price >= 0),          -- VND, số nguyên
   image_url     TEXT,
   is_available  BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at    TIMESTAMPTZ
 );
 
 -- Trạng thái đơn: pending -> confirmed -> preparing -> served -> paid  (hoặc cancelled)

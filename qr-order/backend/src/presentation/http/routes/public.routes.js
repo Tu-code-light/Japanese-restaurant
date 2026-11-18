@@ -8,6 +8,7 @@ import { createOrderDto, tokenParamDto } from '../dtos/orders.dto.js';
  */
 export function createPublicRoutes({ publicController, ordersController, orderLimiter }) {
   const router = Router();
+  router.get('/tables/verify/:token', validate({ params: tokenParamDto }), publicController.verifyTable);
   router.get('/tables/:token', validate({ params: tokenParamDto }), publicController.getTableMenu);
   router.get('/tables/:token/orders', validate({ params: tokenParamDto }), ordersController.customerList);
   router.post('/orders', validate({ body: createOrderDto }), orderLimiter, ordersController.customerCreate);

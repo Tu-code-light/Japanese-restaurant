@@ -1,0 +1,189 @@
+{
+  "info": {
+    "_postman_id": "8e485ef5-6d3e-4e16-a3df-0d8dd3244709",
+    "name": "QR Order - Categories, Products & Tables",
+    "description": "Admin endpoints require a JWT in the collection variable `token`. Product image upload uses multipart field `image`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "token", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "tableId", "value": "" },
+    { "key": "tableToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List / search categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/categories?page=1&limit=20&search=&status=true&sort=desc"
+          }
+        },
+        {
+          "name": "Get category",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Create category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Danh mục mới\",\n  \"description\": \"Mô tả\",\n  \"status\": true,\n  \"sortOrder\": 0\n}"
+            },
+            "url": "{{baseUrl}}/api/categories"
+          }
+        },
+        {
+          "name": "Update category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Danh mục đã sửa\"\n}" },
+            "url": "{{baseUrl}}/api/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Soft delete category",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/categories/{{categoryId}}" }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List / filter products",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/products?page=1&limit=20&search=&categoryId={{categoryId}}&status=available&minPrice=0&maxPrice=100000000&sortBy=created_at&sort=desc"
+          }
+        },
+        {
+          "name": "Get product",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/products/{{productId}}" }
+        },
+        {
+          "name": "Create product (multipart)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "categoryId", "value": "{{categoryId}}", "type": "text" },
+                { "key": "name", "value": "Món mới", "type": "text" },
+                { "key": "description", "value": "Mô tả", "type": "text" },
+                { "key": "price", "value": "25000", "type": "text" },
+                { "key": "status", "value": "available", "type": "text" },
+                { "key": "image", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{baseUrl}}/api/products"
+          }
+        },
+        {
+          "name": "Update product",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"price\": 30000,\n  \"status\": \"available\"\n}" },
+            "url": "{{baseUrl}}/api/products/{{productId}}"
+          }
+        },
+        {
+          "name": "Update product status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"unavailable\"\n}" },
+            "url": "{{baseUrl}}/api/products/{{productId}}/status"
+          }
+        },
+        {
+          "name": "Soft delete product",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/products/{{productId}}" }
+        }
+      ]
+    },
+    {
+      "name": "Tables & QR",
+      "item": [
+        {
+          "name": "List tables",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tables?page=1&limit=20&search=&location=&status=available"
+          }
+        },
+        {
+          "name": "Get table",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/tables/{{tableId}}" }
+        },
+        {
+          "name": "Create table and QR",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bàn mới\",\n  \"capacity\": 4,\n  \"location\": \"Tầng 1\",\n  \"status\": \"available\"\n}"
+            },
+            "url": "{{baseUrl}}/api/tables"
+          }
+        },
+        {
+          "name": "Get QR data",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/tables/{{tableId}}/qr" }
+        },
+        {
+          "name": "Download QR PNG",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/tables/{{tableId}}/qr/download" }
+        },
+        {
+          "name": "Regenerate QR token",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/tables/{{tableId}}/qr/regenerate" }
+        },
+        {
+          "name": "Verify QR token (public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/public/tables/verify/{{tableToken}}"
+          }
+        },
+        {
+          "name": "Update table status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"occupied\"\n}" },
+            "url": "{{baseUrl}}/api/tables/{{tableId}}/status"
+          }
+        },
+        {
+          "name": "Soft delete table",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/tables/{{tableId}}" }
+        }
+      ]
+    }
+  ]
+}
