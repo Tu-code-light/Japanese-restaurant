@@ -168,3 +168,4 @@ export function translateItemName(name, lang) {
   if (lang !== 'en') return name;
   return menuItemTranslations[name]?.name?.en ?? name;
 }
+
