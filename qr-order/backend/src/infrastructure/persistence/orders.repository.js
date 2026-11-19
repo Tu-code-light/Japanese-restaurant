@@ -134,4 +134,12 @@ export const ordersRepository = {
       [ids],
     );
   },
+
+  async delete(storeId, id) {
+    const { rowCount } = await query(
+      `DELETE FROM orders WHERE store_id = $1 AND id = $2`,
+      [storeId, id],
+    );
+    return rowCount > 0;
+  },
 };

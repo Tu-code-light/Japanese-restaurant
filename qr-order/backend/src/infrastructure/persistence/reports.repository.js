@@ -108,7 +108,7 @@ export const reportsRepository = {
   },
 
   /**
-   * 10 đơn hàng gần nhất
+   * Danh sách đơn hàng gần đây (tối đa 100 đơn để hỗ trợ phân trang)
    */
   async getRecentOrders(storeId) {
     const { rows } = await query(
@@ -117,7 +117,7 @@ export const reportsRepository = {
        JOIN tables t ON t.id = o.table_id
        WHERE o.store_id = $1
        ORDER BY o.created_at DESC
-       LIMIT 10`,
+       LIMIT 100`,
       [storeId],
     );
 
