@@ -143,5 +143,15 @@ export function createOrdersService({
       orders.forEach((order) => publisher.orderUpdated(order));
       return orders;
     },
+
+    /** Xóa đơn hàng (dành cho quản lý/nhân viên) */
+    async deleteOrder(storeId, orderId) {
+      const order = await ordersRepository.findById(orderId);
+      if (!order || order.storeId !== storeId) {
+        throw AppError.notFound('Không tìm thấy đơn hàng');
+      }
+      await ordersRepository.delete(storeId, orderId);
+      return { id: orderId };
+    },
   };
 }

@@ -32,4 +32,9 @@ export const createOrdersController = (ordersService) => ({
     const orders = await ordersService.checkoutTable(req.user.storeId, req.params.tableId);
     sendSuccess(res, orders, 'Đã thanh toán bàn');
   }),
+
+  remove: asyncHandler(async (req, res) => {
+    await ordersService.deleteOrder(req.user.storeId, req.params.id);
+    sendSuccess(res, null, 'Đã xóa đơn hàng thành công');
+  }),
 });

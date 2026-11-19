@@ -30,5 +30,6 @@ export function createOrdersRoutes({ ordersController, authenticate, orderLimite
     ordersController.changeStatus,
   );
   router.post('/tables/:tableId/checkout', validate({ params: checkoutParamDto }), ordersController.checkout);
+  router.delete('/:id', validate({ params: orderIdParamDto }), ordersController.remove);
   return router;
 }
