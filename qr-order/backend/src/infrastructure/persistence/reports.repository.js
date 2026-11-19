@@ -107,9 +107,6 @@ export const reportsRepository = {
     }));
   },
 
-  /**
-   * Danh sách đơn hàng gần đây (tối đa 100 đơn để hỗ trợ phân trang)
-   */
   async getRecentOrders(storeId) {
     const { rows } = await query(
       `SELECT o.id, t.name AS table_name, o.total_amount, o.status, o.created_at
