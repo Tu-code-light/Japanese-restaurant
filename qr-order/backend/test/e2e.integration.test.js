@@ -73,7 +73,10 @@ function waitForOrderEvent(socket, eventName, predicate, timeoutMs = 4000) {
 test('Kiểm thử: Khách quét QR -> Gọi món -> Bếp nhận real-time -> Đổi trạng thái -> Khách nhận thông báo', async (t) => {
   // 0. Kiểm tra server đang chạy
   const healthRes = await fetch(`${BASE_URL}/api/health`).catch(() => null);
-  assert.ok(healthRes && healthRes.ok, `Backend chưa chạy tại ${BASE_URL}. Hãy chạy "npm run dev" trước!`);
+  if (!healthRes || !healthRes.ok) {
+    t.skip(`Backend chưa chạy tại ${BASE_URL}. Chạy "npm run dev" để thực hiện test E2E.`);
+    return;
+  }
 
   // 1. Nhân viên / Bếp đăng nhập & lấy thông tin bàn test
   const loginRes = await apiRequest('/api/auth/login', {

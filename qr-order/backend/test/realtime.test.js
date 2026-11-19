@@ -64,7 +64,7 @@ test('Socket.IO authenticates clients and supports rooms, messages, presence, st
     authMiddleware: { authenticate: passThrough, authorize: () => passThrough },
     controllers: {
       auth: { login: emptyHandler, me: emptyHandler },
-      menu: { list: emptyHandler, create: emptyHandler, update: emptyHandler },
+      menu: { list: emptyHandler, create: emptyHandler, update: emptyHandler, delete: emptyHandler },
       orders: {
         staffList: emptyHandler,
         changeStatus: emptyHandler,
@@ -99,6 +99,7 @@ test('Socket.IO authenticates clients and supports rooms, messages, presence, st
         remove: emptyHandler,
       },
       public: { verifyTable: emptyHandler, getTableMenu: emptyHandler },
+      reports: { getSalesReport: emptyHandler },
     },
   });
   const httpServer = http.createServer(app);

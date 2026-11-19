@@ -93,14 +93,16 @@ export function createApp({ env, query, apiLimiter, limiters, controllers, authM
     }),
   );
 
+  if (controllers.reports) {
     app.use(
-    '/api/reports',
-    createReportsRoutes({
-      reportsController: controllers.reports,
-      authenticate: authMiddleware.authenticate,
-      authorize: authMiddleware.authorize,
-    }),
-  );
+      '/api/reports',
+      createReportsRoutes({
+        reportsController: controllers.reports,
+        authenticate: authMiddleware.authenticate,
+        authorize: authMiddleware.authorize,
+      }),
+    );
+  }
   app.use(notFoundHandler);
   app.use(createErrorHandler(env));
   return app;

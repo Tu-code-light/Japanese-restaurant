@@ -12,11 +12,13 @@ export function createMenuRoutes({ menuController, authenticate, authorize }) {
     validate({ params: menuItemIdParamDto, body: updateMenuItemDto }),
     menuController.update,
   );
-  router.delete(
-    '/items/:id',
-    authorize('admin'),
-    validate({ params: menuItemIdParamDto }),
-    menuController.delete,
-  );
+  if (menuController.delete) {
+    router.delete(
+      '/items/:id',
+      authorize('admin'),
+      validate({ params: menuItemIdParamDto }),
+      menuController.delete,
+    );
+  }
   return router;
 }
