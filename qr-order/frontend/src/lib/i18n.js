@@ -310,7 +310,7 @@ export const messages = {
     loadingReport: 'Generating report data...',
     retry: 'Retry',
     refresh: 'Refresh',
-    totalRevenue: 'Total Revenue (Paid)',
+    totalRevenue: 'Total Revenue',
     paidOrdersCount: '{count} paid orders',
     totalOrdersCount: 'Total Orders',
     completionRate: 'Completion Rate',
