@@ -47,7 +47,7 @@ function FullListModal({ orders, title, onClose, onDelete, language, t }) {
                         onClick={() => onDelete(ord.id)}
                         title={t('deleteOrder') || 'Xoá đơn'}
                       >
-                        🗑
+                        ✕
                       </button>
                     </td>
                   </tr>
@@ -211,8 +211,12 @@ export default function SalesReportPage() {
         <section className="card chart-section">
           <div className="row row--between mb-2">
             <div>
-              <h2>📈 {t('revenueChart') || 'Biến động doanh thu'}</h2>
-              <p className="muted">{t('revenueChartSubtitle') || 'Doanh thu theo từng ngày gần đây'}</p>
+              <h2>📈 {t('revenueTrend') || 'Biến động doanh thu'}</h2>
+              <p className="muted">
+                {period === 'daily'
+                  ? (t('revenueDailyHint') || 'Doanh thu theo từng ngày gần đây')
+                  : (t('revenueWeeklyHint') || 'Doanh thu theo từng tuần')}
+              </p>
             </div>
             <div className="row" style={{ gap: '8px' }}>
               <button
@@ -262,7 +266,7 @@ export default function SalesReportPage() {
               {formatVND(overview.totalRevenue || 0, language)}
             </strong>
             <span className="muted kpi-card__sub">
-              {overview.paidOrders || 0} {t('paidOrdersLabel') || 'đơn thành công'}
+              {overview.paidOrders || 0}&nbsp;{t('paidOrdersLabel') || 'đơn thành công'}
             </span>
           </div>
 
@@ -285,10 +289,10 @@ export default function SalesReportPage() {
           </div>
 
           <div className="card kpi-card">
-            <span className="kpi-card__label">🍽️ {t('activeOrdersCount') || 'Đơn đang phục vụ'}</span>
+            <span className="kpi-card__label">🍽️ {t('activeOrdersNow') || 'Đơn đang phục vụ'}</span>
             <strong className="kpi-card__val">{overview.activeOrders || 0}</strong>
             <span className="muted kpi-card__sub">
-              {overview.cancelledOrders || 0} {t('cancelledLabel') || 'đơn huỷ'}
+              {overview.cancelledOrders || 0}&nbsp;{t('cancelledLabel') || 'đơn huỷ'}
             </span>
           </div>
         </div>
@@ -336,7 +340,7 @@ export default function SalesReportPage() {
             <h2>⏱ {t('recentOrdersTitle') || 'Đơn hàng gần đây'}</h2>
             {recentOrders.length > 0 && (
               <button className="btn btn-sm" onClick={() => setShowOrderModal(true)}>
-                {t('viewAll') || 'Xem tất cả'} →
+                {t('viewAll') || 'Xem tất cả →'}
               </button>
             )}
           </div>
@@ -355,7 +359,7 @@ export default function SalesReportPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrders.slice(0, 5).map((ord) => (
+                  {recentOrders.slice(0, 8).map((ord) => (
                     <tr key={ord.id}>
                       <td><strong>#{ord.id}</strong></td>
                       <td>{ord.tableName}</td>
