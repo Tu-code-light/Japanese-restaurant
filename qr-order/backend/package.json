@@ -9,6 +9,8 @@
     "db:init": "node scripts/initDb.js",
     "db:reset": "node scripts/initDb.js --reset",
     "test": "node --test",
+    "test:integration": "node --test test/e2e.integration.test.js",
+    "test:realtime": "node --test test/realtime.test.js",
     "test:load": "node scripts/loadTest.js"
   },
   "dependencies": {

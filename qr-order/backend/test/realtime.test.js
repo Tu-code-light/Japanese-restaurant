@@ -71,6 +71,7 @@ test('Socket.IO authenticates clients and supports rooms, messages, presence, st
         checkout: emptyHandler,
         customerList: emptyHandler,
         customerCreate: emptyHandler,
+        remove: emptyHandler,
       },
       tables: {
         list: emptyHandler,

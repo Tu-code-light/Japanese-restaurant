@@ -127,3 +127,34 @@ Git repository root/
 - **Chạy nhiều instance:** Thêm `@socket.io/redis-adapter` (room dùng chung) và thay `TtlCache` bằng Redis.
 - **Triển khai Production:** Đặt sau Nginx/Caddy có HTTPS (camera điện thoại quét QR & PWA cần HTTPS), đặt `NODE_ENV=production`, dùng `JWT_SECRET` dài ngẫu nhiên, đổi mật khẩu tài khoản mẫu.
 - **Tính năng có thể mở rộng tiếp:** Thanh toán trực tuyến (VNPAY/MoMo/ZaloPay), in bill qua máy in nhiệt (ESC/POS), thống kê báo cáo doanh thu theo ca.
+
+---
+
+## Docker Compose
+
+Docker Desktop đang chạy có thể khởi động toàn bộ hệ thống bằng một lệnh:
+
+```bash
+cd qr-order
+docker compose up -d --build
+```
+
+- Từ thư mục `qr-order`, tùy chọn copy `.env.example` thành `.env` để tùy chỉnh database/JWT/CORS.
+- Frontend: `http://localhost`
+- Backend: `http://localhost:4000`
+- Health check: `http://localhost/api/health`
+- PostgreSQL: `localhost:5432`
+
+Docker Compose tự chờ PostgreSQL healthy, áp dụng schema/migrations, seed dữ liệu lần đầu và khởi động backend. Restart container không chạy seed trùng lặp.
+
+## Kiểm thử
+
+```bash
+cd qr-order/backend
+npm test
+npm run test:realtime
+npm run test:integration
+CONCURRENCY=10 STAFF_CONNECTIONS=3 npm run test:load
+```
+
+Tài liệu bàn giao nằm trong `qr-order/docs/`.

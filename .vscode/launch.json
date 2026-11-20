@@ -14,6 +14,13 @@
       "name": "Mở Web App với Edge (F5)",
       "url": "http://localhost:5173",
       "userDataDir": "${workspaceFolder}/.vscode/edge-debug"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Mở Docker Web App",
+      "url": "http://localhost",
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-docker"
     }
   ]
 }

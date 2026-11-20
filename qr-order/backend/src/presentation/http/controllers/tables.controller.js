@@ -37,11 +37,11 @@ export const createTablesController = (tablesService) => ({
   }),
 
   qr: asyncHandler(async (req, res) => {
-    sendSuccess(res, await tablesService.getQr(req.user.storeId, req.params.id));
+    sendSuccess(res, await tablesService.getQr(req.user.storeId, req.params.id, req.query.origin));
   }),
 
   downloadQr: asyncHandler(async (req, res) => {
-    const qr = await tablesService.getQr(req.user.storeId, req.params.id);
+    const qr = await tablesService.getQr(req.user.storeId, req.params.id, req.query.origin);
     const image = Buffer.from(qr.dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64');
     res.attachment(`table-${qr.tableId}.png`).type('png').send(image);
   }),

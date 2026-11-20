@@ -89,7 +89,7 @@ test('Kiểm thử: Khách quét QR -> Gọi món -> Bếp nhận real-time -> �
   const tablesRes = await apiRequest('/api/tables', { token: staffToken });
   const tables = Array.isArray(tablesRes) ? tablesRes : tablesRes.items || tablesRes.tables || [];
   assert.ok(tables.length > 0, 'DB phải có dữ liệu bàn (chạy npm run db:init trước)');
-  const targetTable = tables[0];
+  const targetTable = tables.find((table) => Number(table.openOrders ?? 0) === 0) || tables[0];
   const tableToken = targetTable.qrToken || targetTable.qr_token;
   assert.ok(tableToken, 'Bàn test phải có qrToken');
 
@@ -112,19 +112,24 @@ test('Kiểm thử: Khách quét QR -> Gọi món -> Bếp nhận real-time -> �
   assert.ok(availableItems.length >= 2, 'Thực đơn phải có ít nhất 2 món đang bán');
 
   // 4. Khách gửi đơn đặt món (TASK-503) -> Bếp nhận sự kiện 'order:new' & 'notification' real-time
+  const testNote = `E2E Test TASK-801 ${crypto.randomUUID()}`;
   const kitchenNewOrderPromise = waitForOrderEvent(
     staffSocket,
     'order:new',
-    (order) => String(order.tableId) === String(targetTable.id),
+    (order) => String(order.tableId) === String(targetTable.id) && order.note === testNote,
   );
-  const kitchenNotifyPromise = once(staffSocket, 'notification');
+  const kitchenNotifyPromise = waitForOrderEvent(
+    staffSocket,
+    'notification',
+    (payload) => payload.type === 'order:new' && payload.tableId === targetTable.id,
+  );
 
   const createdOrder = await apiRequest('/api/public/orders', {
     method: 'POST',
     body: {
       tableToken,
       idempotencyKey: crypto.randomUUID(),
-      note: 'E2E Test TASK-801',
+      note: testNote,
       items: [
         { menuItemId: availableItems[0].id, quantity: 2 },
         { menuItemId: availableItems[1].id, quantity: 1 },
@@ -134,7 +139,7 @@ test('Kiểm thử: Khách quét QR -> Gọi món -> Bếp nhận real-time -> �
 
   assert.equal(createdOrder.status, 'pending');
   const receivedOrder = await kitchenNewOrderPromise;
-  const [notifyPayload] = await kitchenNotifyPromise;
+  const notifyPayload = await kitchenNotifyPromise;
   assert.equal(receivedOrder.id, createdOrder.id, 'Bếp phải nhận đúng đơn khách vừa đặt qua Socket');
   assert.equal(notifyPayload.type, 'order:new');
   assert.equal(notifyPayload.orderId, createdOrder.id);
@@ -157,9 +162,9 @@ test('Kiểm thử: Khách quét QR -> Gọi món -> Bếp nhận real-time -> �
     assert.equal(updatedOrder.status, nextStatus, `Khách phải nhận được trạng thái mới "${nextStatus}"`);
   }
 
-  // 6. Dọn dẹp: Thanh toán đóng đơn để giữ sạch database
-  await apiRequest(`/api/orders/tables/${targetTable.id}/checkout`, {
-    method: 'POST',
+  // 6. Dọn dẹp: chỉ xóa đơn do test tạo, không ảnh hưởng đơn cũ hoặc dữ liệu tải khác
+  await apiRequest(`/api/orders/${createdOrder.id}`, {
+    method: 'DELETE',
     token: staffToken,
   });
 });

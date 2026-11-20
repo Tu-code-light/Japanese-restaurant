@@ -1,8 +1,12 @@
 node_modules/
 dist/
+coverage/
+build/
 .env
+.env.*
+!.env.example
 .DS_Store
 *.log
 .vscode/*-debug
-
+qr-order/backend/uploads/
 

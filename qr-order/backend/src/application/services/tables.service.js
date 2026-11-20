@@ -9,6 +9,19 @@ export function createTablesService({
   customerAppUrl,
 }) {
   const buildOrderUrl = (token) => `${customerAppUrl.replace(/\/$/, '')}/t/${token}`;
+  const buildOrderUrlWithOrigin = (token, origin) => {
+    if (typeof origin === 'string' && /^https?:\/\//i.test(origin)) {
+      try {
+        const hostname = new URL(origin).hostname;
+        if (!['localhost', '127.0.0.1', '::1'].includes(hostname)) {
+          return `${origin.replace(/\/$/, '')}/t/${token}`;
+        }
+      } catch {
+        // Fall back to CUSTOMER_APP_URL when the supplied origin is invalid.
+      }
+    }
+    return buildOrderUrl(token);
+  };
   const withOrderUrl = (table) => ({
     ...table,
     orderUrl: buildOrderUrl(table.qrToken),
@@ -86,13 +99,13 @@ export function createTablesService({
     },
 
     /** Sinh ảnh QR (data URL PNG) cho 1 bàn */
-    async getQr(storeId, tableId) {
+    async getQr(storeId, tableId, origin) {
       const table = await tablesRepository.findById(tableId, storeId);
       if (!table) throw AppError.notFound('Không tìm thấy bàn');
 
-      const url = buildOrderUrl(table.qrToken);
-      const dataUrl = table.qrCode || await generateQrDataUrl(url);
-      if (!table.qrCode) await tablesRepository.updateQr(storeId, tableId, table.qrToken, dataUrl);
+        const url = buildOrderUrlWithOrigin(table.qrToken, origin);
+        const dataUrl = await generateQrDataUrl(url);
+        await tablesRepository.updateQr(storeId, tableId, table.qrToken, dataUrl);
       return { tableId: table.id, name: table.name, url, dataUrl };
     },
 

@@ -14,6 +14,7 @@ import crypto from 'node:crypto';
 
 const API = process.env.API_URL ?? 'http://localhost:4000';
 const N = Number(process.env.CONCURRENCY ?? 50);
+const STAFF_CONNECTIONS = Number(process.env.STAFF_CONNECTIONS ?? 3);
 
 const api = async (path, { method = 'GET', body, token } = {}) => {
   const res = await fetch(`${API}/api${path}`, {
@@ -38,9 +39,10 @@ async function main() {
 
   // 2. Nhân viên kết nối socket, ghi lại thời điểm nhận đơn
   const received = new Map(); // idempotencyKey (nằm trong note) -> thời điểm nhận
-  const staffSockets = Array.from({ length: 3 }, () => {
-    const s = io(API, { auth: { token }, transports: ['websocket'] });
+  const staffSockets = Array.from({ length: STAFF_CONNECTIONS }, () => {
+    const s = io(API, { auth: { token }, transports: ['websocket'], reconnection: false });
     s.on('order:new', (o) => {
+      if (typeof o.note !== 'string' || !o.note.startsWith('load-')) return;
       if (!received.has(o.note)) received.set(o.note, performance.now());
     });
     return s;
@@ -90,8 +92,10 @@ async function main() {
   const e2e = [...received].map(([tag, t]) => t - sent.get(tag)).filter((x) => x >= 0);
   console.log('\n===== KẾT QUẢ =====');
   console.log(`Thành công / Thất bại : ${success} / ${failed}`);
+  console.log(`Tỷ lệ thành công       : ${latencies.length ? ((success / (success + failed)) * 100).toFixed(2) : '0.00'}%`);
   console.log(`Tổng thời gian        : ${total.toFixed(0)} ms`);
-  console.log(`Độ trễ API   p50/p95/max: ${pct(latencies, 50).toFixed(0)} / ${pct(latencies, 95).toFixed(0)} / ${Math.max(...latencies).toFixed(0)} ms`);
+  console.log(`Thông lượng            : ${((success + failed) / (total / 1000)).toFixed(2)} yêu cầu/giây`);
+  console.log(`Độ trễ API   p50/p95/max: ${latencies.length ? `${pct(latencies, 50).toFixed(0)} / ${pct(latencies, 95).toFixed(0)} / ${Math.max(...latencies).toFixed(0)}` : '0 / 0 / 0'} ms`);
   console.log(`Nhân viên nhận đơn qua socket: ${received.size}/${success}`);
   if (e2e.length) {
     console.log(`Độ trễ end-to-end (gửi -> nhân viên thấy) p50/p95/max: ${pct(e2e, 50).toFixed(0)} / ${pct(e2e, 95).toFixed(0)} / ${Math.max(...e2e).toFixed(0)} ms`);
